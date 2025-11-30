@@ -1,4 +1,3 @@
-// src/hooks/useApiData.js
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../lib/axios';
 
@@ -11,11 +10,14 @@ export const useApiStats = (apiKey) => {
             return response.data.data;
         },
         enabled: !!apiKey,
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     return {
-        stats: data || { /* default omitted for brevity */ },
+        stats: data || {},
         isLoading,
         error,
         refetch
@@ -31,7 +33,10 @@ export const useApiServices = (apiKey) => {
             return response.data.data;
         },
         enabled: !!apiKey,
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     return {
@@ -50,7 +55,11 @@ export const useApiRoutes = (apiKey) => {
             const response = await apiClient.get(`/api/${apiKey}/routes`);
             return response.data.data;
         },
-        enabled: !!apiKey
+        enabled: !!apiKey,
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     return {
@@ -76,7 +85,10 @@ export const useApiLogs = (apiKey, filters = {}) => {
             return response.data.data;
         },
         enabled: !!apiKey,
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     return {

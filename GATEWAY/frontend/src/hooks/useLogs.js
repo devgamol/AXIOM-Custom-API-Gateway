@@ -14,12 +14,15 @@ export const useLogs = () => {
     const { data, isLoading, error } = useQuery({
         queryKey: ['logs', filters, page],
         queryFn: () => getLogs({ ...filters, page, limit: 50 }),
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     const updateFilter = (key, value) => {
         setFilters(prev => ({ ...prev, [key]: value }));
-        setPageNumber(1); // Reset to page 1 when filter changes
+        setPageNumber(1);
     };
 
     const setPage = (newPage) => {

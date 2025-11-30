@@ -1,3 +1,4 @@
+// src/hooks/useMetrics.js
 import { useQuery } from '@tanstack/react-query';
 import { getMetrics } from '../api/metrics';
 import { useState } from 'react';
@@ -20,7 +21,10 @@ export const useMetrics = (apiKey, initialRange = {}) => {
         queryKey: ['metrics', apiKey, dateRange],
         queryFn: () => getMetrics(apiKey, dateRange),
         enabled: !!apiKey,
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     const updateRange = (from, to) => {

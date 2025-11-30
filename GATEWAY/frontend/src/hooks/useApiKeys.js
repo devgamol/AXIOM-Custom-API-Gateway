@@ -21,8 +21,11 @@ export const useApiKeys = () => {
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['apiKeys', userId],
         queryFn: () => getApiKeys(userId),
-        enabled: !!userId, // Only run if logged in
-        staleTime: 30000
+        enabled: !!userId,
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     const createMutation = useMutation({
