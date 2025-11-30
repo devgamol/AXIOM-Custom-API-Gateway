@@ -1,5 +1,3 @@
-// src/pages/dashboard/Routes.jsx
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../lib/axios';
@@ -16,7 +14,10 @@ const RoutesPage = () => {
             const response = await apiClient.get('/routes');
             return response.data?.data || [];
         },
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     const {
@@ -28,7 +29,10 @@ const RoutesPage = () => {
             const response = await apiClient.get('/services');
             return response.data?.data || [];
         },
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     const { createRoute, deleteRoute } = useRoutes();
@@ -105,7 +109,7 @@ const RoutesPage = () => {
 
                     <tbody className="divide-y divide-gray-700">
                         {apiRoutes.map((route) => {
-                            const routeId = route.id; // backend returns id, NOT _id
+                            const routeId = route.id;
                             const linkedServiceName =
                                 route.serviceId?.name || "Unknown";
 

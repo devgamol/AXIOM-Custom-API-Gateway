@@ -1,9 +1,9 @@
+// src/hooks/useDashboardStats.js
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../lib/axios';
 
 /**
  * Custom hook for fetching comprehensive dashboard statistics
- * Auto-refreshes every 5 seconds
  */
 export const useDashboardStats = () => {
     const { data, isLoading, error, refetch } = useQuery({
@@ -12,7 +12,10 @@ export const useDashboardStats = () => {
             const response = await apiClient.get('/dashboard/stats');
             return response.data;
         },
-        staleTime: 30000
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     return {

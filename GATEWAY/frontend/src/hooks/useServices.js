@@ -22,6 +22,10 @@ export const useServices = (serviceId = null) => {
     } = useQuery({
         queryKey: ['services'],
         queryFn: getServices,
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     // Fetch single service (if ID provided)
@@ -33,6 +37,10 @@ export const useServices = (serviceId = null) => {
         queryKey: ['service', serviceId],
         queryFn: () => getService(serviceId),
         enabled: !!serviceId,
+        staleTime: 0,
+        refetchOnMount: true,
+        refetchOnReconnect: true,
+        refetchOnWindowFocus: false
     });
 
     // Create service mutation
@@ -62,7 +70,6 @@ export const useServices = (serviceId = null) => {
             queryClient.invalidateQueries({ queryKey: ['services'] });
         },
     });
-
 
     return {
         // List data
