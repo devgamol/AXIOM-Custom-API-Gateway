@@ -1,7 +1,10 @@
 // src/lib/axios.js
 import axios from "axios";
 
+// Read from .env (VITE_API_BASE must be defined)
 const BASE_URL = import.meta.env.VITE_API_BASE || "http://localhost:5000";
+
+console.log("AXIOS BASE URL =>", BASE_URL); // DEBUG LINE (KEEP FOR NOW)
 
 const apiClient = axios.create({
   baseURL: BASE_URL,
@@ -11,21 +14,11 @@ const apiClient = axios.create({
   },
 });
 
-// Inject latest token dynamically before each request
 apiClient.interceptors.request.use(
   (config) => {
-    try {
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        config.headers = config.headers || {};
-        config.headers["Authorization"] = `Bearer ${token}`;
-      } else {
-        if (config.headers && config.headers["Authorization"]) {
-          delete config.headers["Authorization"];
-        }
-      }
-    } catch (e) {
-      // ignore
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
     return config;
   },

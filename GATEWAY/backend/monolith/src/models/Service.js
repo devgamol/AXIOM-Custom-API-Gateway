@@ -1,5 +1,6 @@
+// models/Service.js
+
 const mongoose = require('mongoose');
-const { SERVICE_STATUS } = require('../shared/constants');
 
 const serviceSchema = new mongoose.Schema({
     apiKey: {
@@ -41,12 +42,22 @@ const serviceSchema = new mongoose.Schema({
     description: {
         type: String,
         trim: true
+    },
+
+    // -----------------------
+    // ✔ The missing field
+    // -----------------------
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+        index: true
     }
+
 }, {
     timestamps: true
 });
 
-// Compound index for API-scoped queries
 serviceSchema.index({ apiKey: 1, name: 1 });
 
 module.exports = mongoose.model('Service', serviceSchema);
