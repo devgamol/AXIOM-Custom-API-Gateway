@@ -1,6 +1,6 @@
 import apiClient from '../lib/axios';
 
-// Base URL for services
+// Correct Base URL for backend services
 const SERVICES_BASE = '/services';
 
 /**
@@ -49,11 +49,6 @@ export const updateService = async (id, data) => {
  * @returns {Promise} - { success, message }
  */
 export const deleteService = async (id) => {
-    const token = localStorage.getItem("auth_token");
-
-    const response = await apiClient.delete(`${SERVICES_BASE}/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-
-    return response.data;   // IMPORTANT: return parsed data
+    const response = await apiClient.delete(`${SERVICES_BASE}/${id}`);
+    return response.data;
 };
