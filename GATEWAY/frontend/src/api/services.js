@@ -17,10 +17,13 @@ export const createService = async (data) => {
  * Get all services
  * @returns {Promise} - { success, data: [services] }
  */
-export const getServices = async () => {
-    const response = await apiClient.get(SERVICES_BASE);
+export const getServices = async (apiKey) => {
+    const response = await apiClient.get('/services', {
+        params: { apiKey }   // ⭐ add filter
+    });
     return response.data;
 };
+
 
 /**
  * Get a specific service by ID
