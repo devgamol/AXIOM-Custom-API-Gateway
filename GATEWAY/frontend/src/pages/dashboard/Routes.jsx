@@ -2,45 +2,60 @@ import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import apiClient from '../../lib/axios';
 import { useRoutes } from '../../hooks/useRoutes';
+import { useApi } from '../../context/ApiContext';
 
 const RoutesPage = () => {
+    const { selectedApi } = useApi();
+    const apiKey = selectedApi?.key;
+
+    const {
+        createRoute,
+        deleteRoute
+    } = useRoutes();
+
+    // -----------------------------
+    // FETCH ROUTES (FILTER BY apiKey)
+    // -----------------------------
     const {
         data: routesData,
         isLoading: routesLoading,
         refetch: refetchRoutes
     } = useQuery({
-        queryKey: ['all-routes'],
+        queryKey: ['all-routes', apiKey],
         queryFn: async () => {
-            const response = await apiClient.get('/routes');
-            return response.data?.data || [];
+            const res = await apiClient.get('/routes', {
+                params: { apiKey }   // ⭐ IMPORTANT FILTER
+            });
+            return res.data?.data || [];
         },
+        enabled: !!apiKey,
         staleTime: 0,
-        refetchOnMount: true,
-        refetchOnReconnect: true,
-        refetchOnWindowFocus: false
     });
 
+    // -----------------------------
+    // FETCH SERVICES (FILTER BY API KEY AUTOMATICALLY)
+    // -----------------------------
     const {
         data: servicesData,
-        isLoading: servicesLoading
+        isLoading: servicesLoading,
     } = useQuery({
-        queryKey: ['all-services'],
+        queryKey: ['all-services', apiKey],
         queryFn: async () => {
-            const response = await apiClient.get('/services');
-            return response.data?.data || [];
+            const res = await apiClient.get('/services', {
+                params: { apiKey }   // ⭐ IMPORTANT FILTER
+            });
+            return res.data?.data || [];
         },
+        enabled: !!apiKey,
         staleTime: 0,
-        refetchOnMount: true,
-        refetchOnReconnect: true,
-        refetchOnWindowFocus: false
     });
 
-    const { createRoute, deleteRoute } = useRoutes();
+    const apiRoutes = routesData || [];
+    const apiServices = servicesData || [];
 
     const [isModalOpen, setIsModalOpen] = useState(false);
-
     const [formData, setFormData] = useState({
-        apiKey: '',
+        apiKey: apiKey,
         path: '',
         method: 'GET',
         serviceId: '',
@@ -50,12 +65,11 @@ const RoutesPage = () => {
 
     const handleCreate = (e) => {
         e.preventDefault();
-
         createRoute(formData, {
             onSuccess: () => {
                 setIsModalOpen(false);
                 setFormData({
-                    apiKey: '',
+                    apiKey,
                     path: '',
                     method: 'GET',
                     serviceId: '',
@@ -73,15 +87,21 @@ const RoutesPage = () => {
         });
     };
 
+    if (!selectedApi) {
+        return (
+            <div className="p-6 text-gray-300">
+                Please select an API key first.
+            </div>
+        );
+    }
+
     if (routesLoading || servicesLoading) {
         return <div className="p-6 text-white">Loading routes...</div>;
     }
 
-    const apiRoutes = routesData || [];
-    const apiServices = servicesData || [];
-
     return (
         <div className="p-6">
+
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold text-white">
                     Route Management ({apiRoutes.length})
@@ -108,54 +128,57 @@ const RoutesPage = () => {
                     </thead>
 
                     <tbody className="divide-y divide-gray-700">
-                        {apiRoutes.map((route) => {
-                            const routeId = route.id;
-                            const linkedServiceName =
-                                route.serviceId?.name || "Unknown";
+                        {apiRoutes.map((route) => (
+                            <tr key={route._id}>
+                                <td className="px-6 py-4 font-bold">{route.method}</td>
 
-                            return (
-                                <tr key={routeId} className="hover:bg-gray-750">
-                                    <td className="px-6 py-4 font-bold">{route.method}</td>
+                                <td className="px-6 py-4 font-mono text-sm">
+                                    {route.pathPattern}
+                                </td>
 
-                                    <td className="px-6 py-4 font-mono text-sm">
-                                        {route.path}
-                                    </td>
+                                <td className="px-6 py-4 text-green-300">
+                                    {route.service?.name || "Unknown"}
+                                </td>
 
-                                    <td className="px-6 py-4 text-green-300">
-                                        {linkedServiceName}
-                                    </td>
+                                <td className="px-6 py-4">
+                                    {route.rateLimitPerMinute} req/min
+                                </td>
 
-                                    <td className="px-6 py-4">
-                                        {route.rateLimit} req/min
-                                    </td>
+                                <td className="px-6 py-4">
+                                    <button
+                                        onClick={() => handleDelete(route._id)}
+                                        className="text-red-400 hover:text-red-300"
+                                    >
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
 
-                                    <td className="px-6 py-4">
-                                        <button
-                                            onClick={() => handleDelete(routeId)}
-                                            className="text-red-400 hover:text-red-300"
-                                        >
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                        {apiRoutes.length === 0 && (
+                            <tr>
+                                <td colSpan="5" className="px-6 py-8 text-gray-500">
+                                    No routes found for this API key.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
 
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999999]">
-                    <div className="bg-gray-800 p-6 rounded-lg w-96 relative">
+                    <div className="bg-gray-800 p-6 rounded-lg w-96">
                         <h2 className="text-xl font-bold text-white mb-4">Add Route</h2>
 
                         <form onSubmit={handleCreate} className="space-y-4">
+
                             <input
-                                placeholder="API Key"
+                                placeholder="Route Path"
                                 className="w-full bg-gray-700 text-white p-2 rounded"
-                                value={formData.apiKey}
+                                value={formData.path}
                                 onChange={(e) =>
-                                    setFormData({ ...formData, apiKey: e.target.value })
+                                    setFormData({ ...formData, path: e.target.value })
                                 }
                                 required
                             />
@@ -167,21 +190,11 @@ const RoutesPage = () => {
                                     setFormData({ ...formData, method: e.target.value })
                                 }
                             >
-                                <option value="GET">GET</option>
-                                <option value="POST">POST</option>
-                                <option value="PUT">PUT</option>
-                                <option value="DELETE">DELETE</option>
+                                <option>GET</option>
+                                <option>POST</option>
+                                <option>PUT</option>
+                                <option>DELETE</option>
                             </select>
-
-                            <input
-                                placeholder="/comments"
-                                className="w-full bg-gray-700 text-white p-2 rounded"
-                                value={formData.path}
-                                onChange={(e) =>
-                                    setFormData({ ...formData, path: e.target.value })
-                                }
-                                required
-                            />
 
                             <select
                                 className="w-full bg-gray-700 text-white p-2 rounded"
@@ -204,10 +217,7 @@ const RoutesPage = () => {
                                 className="w-full bg-gray-700 text-white p-2 rounded"
                                 value={formData.destinationPath}
                                 onChange={(e) =>
-                                    setFormData({
-                                        ...formData,
-                                        destinationPath: e.target.value
-                                    })
+                                    setFormData({ ...formData, destinationPath: e.target.value })
                                 }
                             />
 
