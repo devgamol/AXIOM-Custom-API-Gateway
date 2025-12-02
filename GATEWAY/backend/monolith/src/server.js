@@ -60,6 +60,9 @@ const allowedOrigins = [
     // Custom domain
     'https://gateway.hitesh06.online',
 
+    // Backend custom domain
+    'https://gateway-api.hitesh06.online',
+
     // Optional: Hostinger custom domain future use
     process.env.FRONTEND_URL
 ].filter(Boolean);
