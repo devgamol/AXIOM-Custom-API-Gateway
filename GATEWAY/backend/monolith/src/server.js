@@ -57,6 +57,9 @@ const allowedOrigins = [
     // Render Frontend
     'https://axiom-custom-api-gateway-frontend.onrender.com',
 
+    // Custom domain
+    'https://gateway.hitesh06.online',
+
     // Optional: Hostinger custom domain future use
     process.env.FRONTEND_URL
 ].filter(Boolean);
