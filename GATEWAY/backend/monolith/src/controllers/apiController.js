@@ -3,21 +3,22 @@ const ApiMetric = require('../models/ApiMetric');
 const Log = require('../models/Log');
 const { STATUS_CODES } = require('../shared/constants');
 
+const getPublicBase = (req) => {
+    return process.env.PUBLIC_URL || `http://${req.headers.host}`;
+};
+
 /**
- * Get dashboard stats for a specific API key
- * Shows real-time metrics including active health status
+ * Get API statistics
  */
 exports.getApiStats = async (req, res, next) => {
     try {
         const { apiKey } = req.params;
         const ApiKey = require('../models/ApiKey');
+
         const apiDetails = await ApiKey.findOne({ key: apiKey });
 
-        // Get API metrics (auto-initialized, always exists)
         let metrics = await ApiMetric.findOne({ apiKey });
-
         if (!metrics) {
-            // Fallback - shouldn't happen if auto-init works
             metrics = await ApiMetric.create({
                 apiKey,
                 totalRequests: 0,
@@ -26,24 +27,20 @@ exports.getApiStats = async (req, res, next) => {
             });
         }
 
-        // Get active services count from health checker
-        const activeServices = await Service.countDocuments({
-            apiKey,
-            status: 'UP'
-        });
-
-        // Get all services to calculate real avg latency
+        const activeServices = await Service.countDocuments({ apiKey, status: 'UP' });
         const services = await Service.find({ apiKey });
+
         const upServices = services.filter(s => s.status === 'UP');
         const avgServiceLatency = upServices.length > 0
             ? Math.round(upServices.reduce((sum, s) => sum + (s.latency || 0), 0) / upServices.length)
             : 0;
 
-        // Get recent logs
         const recentLogs = await Log.find({ apiKey })
             .sort({ timestamp: -1 })
             .limit(10)
             .lean();
+
+        const baseUrl = getPublicBase(req);
 
         res.status(STATUS_CODES.OK).json({
             success: true,
@@ -52,16 +49,16 @@ exports.getApiStats = async (req, res, next) => {
                 blockedRequests: metrics.blockedRequests,
                 activeServices,
                 totalServices: services.length,
-                avgLatency: avgServiceLatency, // Real latency from health checks
+                avgLatency: avgServiceLatency,
                 successRate: metrics.totalRequests > 0
                     ? Math.round(((metrics.totalRequests - metrics.blockedRequests) / metrics.totalRequests) * 100)
                     : 100,
                 statusBreakdown: metrics.statusBreakdown,
                 timeseries: metrics.timeseries || [],
                 recent: recentLogs,
-                timeseries: metrics.timeseries || [],
-                recent: recentLogs,
-                proxyUrl: `http://localhost:${process.env.PORT || 5000}/proxy/${apiKey}`,
+
+                proxyUrl: `${baseUrl}/proxy/${apiKey}`,
+
                 apiDetails: {
                     name: apiDetails?.name,
                     apiName: apiDetails?.apiName,
@@ -71,13 +68,15 @@ exports.getApiStats = async (req, res, next) => {
                 }
             }
         });
+
     } catch (error) {
         next(error);
     }
 };
 
+
 /**
- * Get services for a specific API key
+ * Get services of an API key
  */
 exports.getApiServices = async (req, res, next) => {
     try {
@@ -94,8 +93,9 @@ exports.getApiServices = async (req, res, next) => {
     }
 };
 
+
 /**
- * Get routes for a specific API key
+ * Get routes for API key
  */
 exports.getApiRoutes = async (req, res, next) => {
     try {
@@ -113,8 +113,9 @@ exports.getApiRoutes = async (req, res, next) => {
     }
 };
 
+
 /**
- * Get logs for a specific API key
+ * Get logs for API key
  */
 exports.getApiLogs = async (req, res, next) => {
     try {

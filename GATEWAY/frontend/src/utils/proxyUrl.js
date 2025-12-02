@@ -5,7 +5,7 @@
  * @returns {string} - Full proxy URL
  */
 export const buildProxyUrl = (apiKey, path = '') => {
-    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const baseUrl = import.meta.env.VITE_API_URL || 'https://axiom-custom-api-gateway.onrender.com';
 
     // Ensure path starts with / if not empty
     const cleanPath = path && !path.startsWith('/') ? `/${path}` : path;

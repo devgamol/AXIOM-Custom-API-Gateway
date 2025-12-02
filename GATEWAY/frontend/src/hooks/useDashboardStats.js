@@ -26,7 +26,7 @@ export const useDashboardStats = () => {
             statusBreakdown: { '2xx': 0, '4xx': 0, '5xx': 0 },
             recent: [],
             timeseries: [],
-            proxyUrl: 'http://localhost:5000/proxy/{your-api-key}'
+             proxyUrl: `${import.meta.env.VITE_API_BASE}/proxy/{your-api-key}`
         },
         isLoading,
         error,

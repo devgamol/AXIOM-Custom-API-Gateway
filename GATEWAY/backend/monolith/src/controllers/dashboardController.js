@@ -4,17 +4,20 @@ const Log = require('../models/Log');
 const ApiKey = require('../models/ApiKey');
 const { STATUS_CODES } = require('../shared/constants');
 
+// Helper: determines correct public base URL (Render / Hostinger / Localhost)
+const getPublicBase = (req) => {
+    return process.env.PUBLIC_URL || `http://${req.headers.host}`;
+};
+
 /**
  * Get comprehensive dashboard statistics
  * Aggregates metrics, services, logs for dashboard overview
  */
 exports.getDashboardStats = async (req, res, next) => {
     try {
-        // Get aggregated metrics (last 24 hours)
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
         const [metricsAgg, servicesCount, recentLogs, timeseries, apiKeysCount] = await Promise.all([
-            // Aggregated metrics
             Metric.aggregate([
                 { $match: { timestamp: { $gte: oneDayAgo } } },
                 {
@@ -30,13 +33,10 @@ exports.getDashboardStats = async (req, res, next) => {
                 }
             ]),
 
-            // Active services count
             Service.countDocuments({ status: 'UP' }),
 
-            // Recent logs (last 10)
             Log.find().sort({ timestamp: -1 }).limit(10).lean(),
 
-            // Time series data (last 24 hours, hourly buckets)
             Metric.aggregate([
                 { $match: { timestamp: { $gte: oneDayAgo } } },
                 {
@@ -61,7 +61,6 @@ exports.getDashboardStats = async (req, res, next) => {
                 }
             ]),
 
-            // Total API keys count
             ApiKey.countDocuments({ isActive: true })
         ]);
 
@@ -73,6 +72,8 @@ exports.getDashboardStats = async (req, res, next) => {
             status4xx: 0,
             status5xx: 0
         };
+
+        const baseUrl = getPublicBase(req);
 
         res.status(STATUS_CODES.OK).json({
             success: true,
@@ -92,7 +93,7 @@ exports.getDashboardStats = async (req, res, next) => {
                 },
                 recent: recentLogs,
                 timeseries,
-                proxyUrl: `http://localhost:${process.env.PORT || 5000}/proxy/{your-api-key}`
+                proxyUrl: `${baseUrl}/proxy/{your-api-key}`
             }
         });
     } catch (error) {
@@ -100,17 +101,18 @@ exports.getDashboardStats = async (req, res, next) => {
     }
 };
 
+
 /**
- * Get user-specific dashboard stats
- * Filters by userId from JWT token
+ * Get dashboard stats for a specific user's API keys
  */
 exports.getUserDashboardStats = async (req, res, next) => {
     try {
         const { userId } = req;
 
-        // Get user's API keys
         const userApiKeys = await ApiKey.find({ userId, isActive: true }).select('key');
         const apiKeyValues = userApiKeys.map(k => k.key);
+
+        const baseUrl = getPublicBase(req);
 
         if (apiKeyValues.length === 0) {
             return res.status(STATUS_CODES.OK).json({
@@ -125,7 +127,7 @@ exports.getUserDashboardStats = async (req, res, next) => {
                     statusBreakdown: { '2xx': 0, '4xx': 0, '5xx': 0 },
                     recent: [],
                     timeseries: [],
-                    proxyUrl: `http://localhost:${process.env.PORT || 5000}/proxy/{your-api-key}`
+                    proxyUrl: `${baseUrl}/proxy/{your-api-key}`
                 }
             });
         }
@@ -133,7 +135,6 @@ exports.getUserDashboardStats = async (req, res, next) => {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
         const [metricsAgg, servicesCount, recentLogs, timeseries] = await Promise.all([
-            // User metrics
             Metric.aggregate([
                 {
                     $match: {
@@ -218,7 +219,7 @@ exports.getUserDashboardStats = async (req, res, next) => {
                 },
                 recent: recentLogs,
                 timeseries,
-                proxyUrl: `http://localhost:${process.env.PORT || 5000}/proxy/{your-api-key}`
+                proxyUrl: `${baseUrl}/proxy/{your-api-key}`
             }
         });
     } catch (error) {
