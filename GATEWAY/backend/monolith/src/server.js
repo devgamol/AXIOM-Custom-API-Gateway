@@ -20,6 +20,7 @@ const metricRoutes = require('./routes/metrics');
 const gatewayRoutes = require('./routes/gateway');
 const dashboardRoutes = require('./routes/dashboard');
 const apiRoutes = require('./routes/api');
+const settingsRoutes = require('./routes/settings');
 
 // Import Controllers
 const healthController = require('./controllers/healthController');
@@ -39,26 +40,37 @@ app.use(helmet({
     contentSecurityPolicy: false
 }));
 
-// Request Logging Middleware
+// Request Logging
 app.use((req, res, next) => {
     Logger.info('ACCESS', `${req.method} ${req.url}`);
     next();
 });
 
-// CORS Configuration
+
+//CORS FIX
+
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:3000',
+
+    // Render Frontend
+    'https://axiom-custom-api-gateway-frontend.onrender.com',
+
+    // Optional: Hostinger custom domain future use
     process.env.FRONTEND_URL
 ].filter(Boolean);
 
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
+    origin: function (origin, callback) {
+        // Allow requests without origin (Postman, Mobile Apps, Curl)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
         } else {
-            callback(new Error('Not allowed by CORS'));
+            console.log("❌ CORS BLOCKED:", origin);
+            return callback(new Error("Not allowed by CORS"));
         }
     },
     credentials: true,
@@ -66,16 +78,17 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Body Parsing Middleware
+
+//END OF CORS FIX     
+
+// Body Parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-/* ------------------  FIXED: SETTINGS ROUTE PLACED HERE  ------------------ */
-const settingsRoutes = require('./routes/settings');
+// Settings Routes (fixed placement)
 app.use('/settings', settingsRoutes);
-/* -------------------------------------------------------------------------- */
 
-// Health Endpoints (no auth required)
+// Health Endpoints
 app.get('/health', healthController.healthCheck);
 app.get('/healthz', healthController.healthCheck);
 app.get('/readyz', healthController.readinessCheck);
@@ -84,7 +97,7 @@ app.get('/livez', healthController.livenessCheck);
 // Public Routes
 app.use('/auth', authRoutes);
 
-// Protected Routes (authentication inside each file)
+// Protected Routes
 app.use('/dashboard', dashboardRoutes);
 app.use('/api', apiRoutes);
 app.use('/apikeys', apiKeyRoutes);
@@ -97,19 +110,10 @@ app.use('/metrics', metricRoutes);
 // Public Proxy Route
 app.use('/proxy', gatewayRoutes(metricsBuffer));
 
-// Health check mirror
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'UP',
-        service: 'axiom-monolith',
-        uptime: process.uptime()
-    });
-});
-
-// Error handler
+// Error Handler
 app.use(errorHandler);
 
-// Background job: Flush metrics every 5 seconds
+// Background Job: Flush metrics every 5s
 const flushInterval = setInterval(() => {
     if (metricsBuffer.hasData()) {
         const snapshots = metricsBuffer.flushMetrics();
@@ -122,7 +126,7 @@ const flushInterval = setInterval(() => {
     }
 }, DEFAULTS.METRICS_FLUSH_INTERVAL || 5000);
 
-// Graceful shutdown
+// Graceful Shutdown
 process.on('SIGTERM', () => {
     Logger.info('MONOLITH', 'SIGTERM received, shutting down gracefully');
     clearInterval(flushInterval);
