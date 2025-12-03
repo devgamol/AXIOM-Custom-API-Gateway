@@ -19,6 +19,18 @@ Project UI: https://drive.google.com/drive/folders/1meE2pYXLF4QOaQndDNhge8EaNGPB
 
 Website Workflow: https://drive.google.com/drive/folders/1LDeb1ipJh4EcjrqY9fgSoCKmw_4bkj0O?usp=sharing
 
+---
+
+## ⚠️ Important Note
+
+- The first login may take **7–8 seconds** due to server warm-up.
+- Use the following test credentials to explore the platform:
+
+**Email:** testing@gmail.com  
+**Password:** 123456  
+
+
+
 ________________________________________________________________________________________________________
 
 ## Features
