@@ -89,7 +89,7 @@ Before installing Axiom, ensure your system has the following:
 4. **Set up environment variables:**
     - Create a .env file inside the backend folder:
      ```bash
-		MONGO_URI=your_mongo_connection_string
+    MONGO_URI=your_mongo_connection_string
     PORT=5000
     JWT_SECRET=your_jwt_secret
     NODE_ENV=production
